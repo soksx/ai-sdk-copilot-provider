@@ -3,7 +3,7 @@ import fs from "node:fs"
 import path from "node:path"
 import os from "node:os"
 
-const CLIENT_ID = "Ov23ctDVkRmgkPke0Mmm" // Github Copilot CLI OAuth client ID
+const CLIENT_ID = "Ov23li8tweQw6odWQebz" // Opencode OAuth client ID
 const OAUTH_POLLING_SAFETY_MARGIN_MS = 3000 // 3 seconds
 
 // Token cache directory
