@@ -161,42 +161,50 @@ export class CopilotChatLanguageModel implements LanguageModelV3 {
       fetch: this.config.fetch,
     })
 
-    const choice = responseBody.choices[0]
     const content: Array<LanguageModelV3Content> = []
+    let hasFunctionCall = false
+    let lastFinishReason: string | null | undefined = undefined
 
-    const text = choice.message.content
-    if (text != null && text.length > 0) {
-      content.push({
-        type: "text",
-        text,
-        providerMetadata: choice.message.reasoning_opaque
-          ? { copilot: { reasoningOpaque: choice.message.reasoning_opaque } }
-          : undefined,
-      })
-    }
+    // Process ALL choices, not just the first one
+    // The API may return text in one choice and tool_calls in another
+    for (const choice of responseBody.choices) {
+      lastFinishReason = choice.finish_reason
 
-    const reasoning = choice.message.reasoning_text
-    if (reasoning != null && reasoning.length > 0) {
-      content.push({
-        type: "reasoning",
-        text: reasoning,
-        providerMetadata: choice.message.reasoning_opaque
-          ? { copilot: { reasoningOpaque: choice.message.reasoning_opaque } }
-          : undefined,
-      })
-    }
-
-    if (choice.message.tool_calls != null) {
-      for (const toolCall of choice.message.tool_calls) {
+      const text = choice.message.content
+      if (text != null && text.length > 0) {
         content.push({
-          type: "tool-call",
-          toolCallId: toolCall.id ?? generateId(),
-          toolName: toolCall.function.name,
-          input: toolCall.function.arguments!,
+          type: "text",
+          text,
           providerMetadata: choice.message.reasoning_opaque
             ? { copilot: { reasoningOpaque: choice.message.reasoning_opaque } }
             : undefined,
         })
+      }
+
+      const reasoning = choice.message.reasoning_text
+      if (reasoning != null && reasoning.length > 0) {
+        content.push({
+          type: "reasoning",
+          text: reasoning,
+          providerMetadata: choice.message.reasoning_opaque
+            ? { copilot: { reasoningOpaque: choice.message.reasoning_opaque } }
+            : undefined,
+        })
+      }
+
+      if (choice.message.tool_calls != null) {
+        for (const toolCall of choice.message.tool_calls) {
+          hasFunctionCall = true
+          content.push({
+            type: "tool-call",
+            toolCallId: toolCall.id ?? generateId(),
+            toolName: toolCall.function.name,
+            input: toolCall.function.arguments!,
+            providerMetadata: choice.message.reasoning_opaque
+              ? { copilot: { reasoningOpaque: choice.message.reasoning_opaque } }
+              : undefined,
+          })
+        }
       }
     }
 
@@ -216,7 +224,12 @@ export class CopilotChatLanguageModel implements LanguageModelV3 {
 
     return {
       content,
-      finishReason: mapCopilotFinishReason(choice.finish_reason),
+      finishReason: mapCopilotFinishReason({
+        finishReason: lastFinishReason,
+        isJsonResponseFromTool:
+          options.responseFormat?.type === "json" &&
+          hasFunctionCall,
+      }),
       usage: {
         inputTokens: {
           total: responseBody.usage?.prompt_tokens ?? undefined,
@@ -324,7 +337,12 @@ export class CopilotChatLanguageModel implements LanguageModelV3 {
             const choice = value.choices[0]
 
             if (choice?.finish_reason != null) {
-              finishReason = mapCopilotFinishReason(choice.finish_reason)
+              finishReason = mapCopilotFinishReason({
+                finishReason: choice.finish_reason,
+                isJsonResponseFromTool:
+                  options.responseFormat?.type === "json" &&
+                  toolCalls.length > 0,
+              })
             }
 
             if (choice?.delta == null) return

@@ -258,6 +258,9 @@ export class CopilotResponsesLanguageModel implements LanguageModelV3 {
       finishReason: mapCopilotResponseFinishReason({
         finishReason: response.incomplete_details?.reason,
         hasFunctionCall: response.output.some((p: any) => p.type === "function_call"),
+        isJsonResponseFromTool:
+          options.responseFormat?.type === "json" &&
+          response.output.some((p: any) => p.type === "function_call"),
       }),
       usage: {
         inputTokens: {
@@ -443,6 +446,9 @@ export class CopilotResponsesLanguageModel implements LanguageModelV3 {
               finishReason = mapCopilotResponseFinishReason({
                 finishReason: value.response.incomplete_details?.reason,
                 hasFunctionCall,
+                isJsonResponseFromTool:
+                  options.responseFormat?.type === "json" &&
+                  hasFunctionCall,
               })
               usage.inputTokens.total = value.response.usage.input_tokens ?? undefined
               usage.outputTokens.total = value.response.usage.output_tokens ?? undefined

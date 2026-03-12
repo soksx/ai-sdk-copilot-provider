@@ -8,5 +8,3 @@ export const copilotProviderOptions = z.object({
   textVerbosity: z.string().optional(),
   thinking_budget: z.number().optional(),
 })
-
-export type CopilotProviderOptions = z.infer<typeof copilotProviderOptions>

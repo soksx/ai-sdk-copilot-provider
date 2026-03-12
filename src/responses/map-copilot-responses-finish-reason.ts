@@ -3,14 +3,19 @@ import type { LanguageModelV3FinishReason } from "@ai-sdk/provider"
 export function mapCopilotResponseFinishReason({
   finishReason,
   hasFunctionCall,
+  isJsonResponseFromTool,
 }: {
   finishReason?: string
   hasFunctionCall: boolean
+  isJsonResponseFromTool?: boolean
 }): LanguageModelV3FinishReason {
   const raw = finishReason ?? undefined
 
   if (hasFunctionCall) {
-    return { unified: "tool-calls", raw }
+    // When using JSON response format, the model may use a tool internally
+    // but we should return 'stop' instead of 'tool-calls' since the tool
+    // is just a JSON formatting mechanism, not an actual tool to execute
+    return { unified: isJsonResponseFromTool ? "stop" : "tool-calls", raw }
   }
 
   switch (finishReason) {
