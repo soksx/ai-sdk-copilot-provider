@@ -1,1 +1,1 @@
-export type CopilotResponsesModelId = string
+export type CopilotResponsesModelId = string;

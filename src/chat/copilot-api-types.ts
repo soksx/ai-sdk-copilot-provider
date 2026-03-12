@@ -1,58 +1,58 @@
-import type { JSONValue } from "@ai-sdk/provider"
+import type { JSONValue } from "@ai-sdk/provider";
 
-type JsonRecord<T = never> = Record<string, JSONValue | JSONValue[] | T | T[] | undefined>
+type JsonRecord<T = never> = Record<string, JSONValue | JSONValue[] | T | T[] | undefined>;
 
 interface CopilotSystemMessage extends JsonRecord<CopilotSystemContentPart> {
-  role: "system"
-  content: string | Array<CopilotSystemContentPart>
+	role: "system";
+	content: string | Array<CopilotSystemContentPart>;
 }
 
 interface CopilotSystemContentPart extends JsonRecord {
-  type: "text"
-  text: string
+	type: "text";
+	text: string;
 }
 
 interface CopilotUserMessage extends JsonRecord<CopilotContentPart> {
-  role: "user"
-  content: string | Array<CopilotContentPart>
+	role: "user";
+	content: string | Array<CopilotContentPart>;
 }
 
-type CopilotContentPart = CopilotContentPartText | CopilotContentPartImage
+type CopilotContentPart = CopilotContentPartText | CopilotContentPartImage;
 
 interface CopilotContentPartImage extends JsonRecord {
-  type: "image_url"
-  image_url: { url: string }
+	type: "image_url";
+	image_url: { url: string };
 }
 
 interface CopilotContentPartText extends JsonRecord {
-  type: "text"
-  text: string
+	type: "text";
+	text: string;
 }
 
 interface CopilotAssistantMessage extends JsonRecord<CopilotMessageToolCall> {
-  role: "assistant"
-  content?: string | null
-  tool_calls?: Array<CopilotMessageToolCall>
-  reasoning_text?: string
-  reasoning_opaque?: string
+	role: "assistant";
+	content?: string | null;
+	tool_calls?: Array<CopilotMessageToolCall>;
+	reasoning_text?: string;
+	reasoning_opaque?: string;
 }
 
 interface CopilotMessageToolCall extends JsonRecord {
-  type: "function"
-  id: string
-  function: { arguments: string; name: string }
+	type: "function";
+	id: string;
+	function: { arguments: string; name: string };
 }
 
 interface CopilotToolMessage extends JsonRecord {
-  role: "tool"
-  content: string
-  tool_call_id: string
+	role: "tool";
+	content: string;
+	tool_call_id: string;
 }
 
 type CopilotMessage =
-  | CopilotSystemMessage
-  | CopilotUserMessage
-  | CopilotAssistantMessage
-  | CopilotToolMessage
+	| CopilotSystemMessage
+	| CopilotUserMessage
+	| CopilotAssistantMessage
+	| CopilotToolMessage;
 
-export type CopilotChatPrompt = Array<CopilotMessage>
+export type CopilotChatPrompt = Array<CopilotMessage>;

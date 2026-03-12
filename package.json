@@ -1,49 +1,52 @@
 {
-  "name": "@soksx/ai-sdk-copilot-provider",
-  "version": "0.1.2",
-  "description": "GitHub Copilot provider for AI SDK",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
-    "dev": "tsup src/index.ts --format esm --dts --watch",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@ai-sdk/provider": "^3.0.8",
-    "@ai-sdk/provider-utils": "^4.0.19",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@types/node": "^22.19.15",
-    "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
-  },
-  "peerDependencies": {
-    "typescript": ">=5.0.0"
-  },
-  "keywords": [
-    "ai-sdk",
-    "copilot",
-    "github",
-    "llm",
-    "provider"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/soksx/ai-sdk-copilot-provider"
-  }
+	"name": "@soksx/ai-sdk-copilot-provider",
+	"version": "0.1.2",
+	"description": "GitHub Copilot provider for AI SDK",
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"lint": "biome check .",
+		"lint:fix": "biome check . --write",
+		"build": "biome check . && tsup src/index.ts --format esm --dts --clean",
+		"dev": "tsup src/index.ts --format esm --dts --watch",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@ai-sdk/provider": "^3.0.8",
+		"@ai-sdk/provider-utils": "^4.0.19",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.6",
+		"@types/node": "^22.19.15",
+		"tsup": "^8.5.1",
+		"typescript": "^5.9.3"
+	},
+	"peerDependencies": {
+		"typescript": ">=5.0.0"
+	},
+	"keywords": [
+		"ai-sdk",
+		"copilot",
+		"github",
+		"llm",
+		"provider"
+	],
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/soksx/ai-sdk-copilot-provider"
+	}
 }

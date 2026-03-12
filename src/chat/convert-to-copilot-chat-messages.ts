@@ -1,155 +1,172 @@
 import {
-  type LanguageModelV3Prompt,
-  type SharedV3ProviderOptions,
-  UnsupportedFunctionalityError,
-} from "@ai-sdk/provider"
-import { convertToBase64 } from "@ai-sdk/provider-utils"
-import type { CopilotChatPrompt } from "./copilot-api-types"
+	type LanguageModelV3Prompt,
+	type SharedV3ProviderOptions,
+	UnsupportedFunctionalityError,
+} from "@ai-sdk/provider";
+import { convertToBase64 } from "@ai-sdk/provider-utils";
+import type { CopilotChatPrompt } from "./copilot-api-types";
 
 function getCopilotMetadata(message: { providerOptions?: SharedV3ProviderOptions }) {
-  return message?.providerOptions?.copilot ?? {}
+	return message?.providerOptions?.copilot ?? {};
 }
 
 export function convertToCopilotChatMessages(prompt: LanguageModelV3Prompt): CopilotChatPrompt {
-  const messages: CopilotChatPrompt = []
+	const messages: CopilotChatPrompt = [];
 
-  for (const { role, content, ...message } of prompt) {
-    const metadata = getCopilotMetadata({ ...message })
+	for (const { role, content, ...message } of prompt) {
+		const metadata = getCopilotMetadata({ ...message });
 
-    switch (role) {
-      case "system": {
-        messages.push({ role: "system", content: content, ...metadata })
-        break
-      }
+		switch (role) {
+			case "system": {
+				messages.push({ role: "system", content: content, ...metadata });
+				break;
+			}
 
-      case "user": {
-        if (content.length === 1 && content[0].type === "text") {
-          messages.push({
-            role: "user",
-            content: content[0].text,
-            ...getCopilotMetadata(content[0]),
-          })
-          break
-        }
+			case "user": {
+				if (content.length === 1 && content[0].type === "text") {
+					messages.push({
+						role: "user",
+						content: content[0].text,
+						...getCopilotMetadata(content[0]),
+					});
+					break;
+				}
 
-        messages.push({
-          role: "user",
-          content: content.map((part) => {
-            const partMetadata = getCopilotMetadata(part)
-            switch (part.type) {
-              case "text": {
-                return { type: "text", text: part.text, ...partMetadata }
-              }
-              case "file": {
-                if (part.mediaType.startsWith("image/")) {
-                  const mediaType = part.mediaType === "image/*" ? "image/jpeg" : part.mediaType
-                  return {
-                    type: "image_url",
-                    image_url: {
-                      url:
-                        part.data instanceof URL
-                          ? part.data.toString()
-                          : `data:${mediaType};base64,${convertToBase64(part.data)}`,
-                    },
-                    ...partMetadata,
-                  }
-                } else {
-                  throw new UnsupportedFunctionalityError({
-                    functionality: `file part media type ${part.mediaType}`,
-                  })
-                }
-              }
-            }
-          }),
-          ...metadata,
-        })
-        break
-      }
+				messages.push({
+					role: "user",
+					content: content.map((part) => {
+						const partMetadata = getCopilotMetadata(part);
+						switch (part.type) {
+							case "text": {
+								return { type: "text", text: part.text, ...partMetadata };
+							}
+							case "file": {
+								if (part.mediaType.startsWith("image/")) {
+									const mediaType = part.mediaType === "image/*" ? "image/jpeg" : part.mediaType;
+									return {
+										type: "image_url",
+										image_url: {
+											url:
+												part.data instanceof URL
+													? part.data.toString()
+													: `data:${mediaType};base64,${convertToBase64(part.data)}`,
+										},
+										...partMetadata,
+									};
+								} else {
+									throw new UnsupportedFunctionalityError({
+										functionality: `file part media type ${part.mediaType}`,
+									});
+								}
+							}
+						}
+					}),
+					...metadata,
+				});
+				break;
+			}
 
-      case "assistant": {
-        let text = ""
-        let reasoningText: string | undefined
-        let reasoningOpaque: string | undefined
-        const toolCalls: Array<{
-          id: string
-          type: "function"
-          function: { name: string; arguments: string }
-        }> = []
+			case "assistant": {
+				let text = "";
+				let reasoningText: string | undefined;
+				let reasoningOpaque: string | undefined;
+				const toolCalls: Array<{
+					id: string;
+					type: "function";
+					function: { name: string; arguments: string };
+				}> = [];
 
-        for (const part of content) {
-          const partMetadata = getCopilotMetadata(part)
-          const partOpaque = (part.providerOptions as { copilot?: { reasoningOpaque?: string } })?.copilot
-            ?.reasoningOpaque
-          if (partOpaque && !reasoningOpaque) {
-            reasoningOpaque = partOpaque
-          }
+				for (const part of content) {
+					const partMetadata = getCopilotMetadata(part);
+					const partOpaque = (part.providerOptions as { copilot?: { reasoningOpaque?: string } })
+						?.copilot?.reasoningOpaque;
+					if (partOpaque && !reasoningOpaque) {
+						reasoningOpaque = partOpaque;
+					}
 
-          switch (part.type) {
-            case "text": {
-              text += part.text
-              break
-            }
-            case "reasoning": {
-              if (part.text) reasoningText = part.text
-              break
-            }
-            case "tool-call": {
-              toolCalls.push({
-                id: part.toolCallId,
-                type: "function",
-                function: { name: part.toolName, arguments: typeof part.input === "string" ? part.input : JSON.stringify(part.input) },
-                ...partMetadata,
-              })
-              break
-            }
-            case "tool-result": {
-              // Tool results in assistant messages are handled differently in V3
-              break
-            }
-          }
-        }
+					switch (part.type) {
+						case "text": {
+							text += part.text;
+							break;
+						}
+						case "reasoning": {
+							if (part.text) reasoningText = part.text;
+							break;
+						}
+						case "tool-call": {
+							toolCalls.push({
+								id: part.toolCallId,
+								type: "function",
+								function: {
+									name: part.toolName,
+									arguments:
+										typeof part.input === "string" ? part.input : JSON.stringify(part.input),
+								},
+								...partMetadata,
+							});
+							break;
+						}
+						case "tool-result": {
+							// Tool results in assistant messages are handled differently in V3
+							break;
+						}
+					}
+				}
 
-        messages.push({
-          role: "assistant",
-          content: text || null,
-          tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
-          reasoning_text: reasoningOpaque ? reasoningText : undefined,
-          reasoning_opaque: reasoningOpaque,
-          ...metadata,
-        })
-        break
-      }
+				messages.push({
+					role: "assistant",
+					content: text || null,
+					tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+					reasoning_text: reasoningOpaque ? reasoningText : undefined,
+					reasoning_opaque: reasoningOpaque,
+					...metadata,
+				});
+				break;
+			}
 
-      case "tool": {
-        for (const toolResponse of content) {
-          if (toolResponse.type !== "tool-result") continue
+			case "tool": {
+				for (const toolResponse of content) {
+					if (toolResponse.type !== "tool-result") continue;
 
-          const result = toolResponse.result
-          let contentValue: string
+					const output = toolResponse.output;
+					let contentValue: string;
 
-          if (typeof result === "string") {
-            contentValue = result
-          } else {
-            contentValue = JSON.stringify(result)
-          }
+					switch (output.type) {
+						case "text":
+						case "error-text":
+							contentValue = output.value;
+							break;
+						case "json":
+						case "error-json":
+							contentValue = JSON.stringify(output.value);
+							break;
+						case "content":
+							contentValue = JSON.stringify(output.value);
+							break;
+						case "execution-denied":
+							contentValue = output.reason ?? "Tool execution denied.";
+							break;
+						default:
+							contentValue = JSON.stringify((output as any).value);
+					}
 
-          const toolResponseMetadata = getCopilotMetadata(toolResponse)
-          messages.push({
-            role: "tool",
-            tool_call_id: toolResponse.toolCallId,
-            content: contentValue,
-            ...toolResponseMetadata,
-          })
-        }
-        break
-      }
+					const toolResponseMetadata = getCopilotMetadata(toolResponse);
+					messages.push({
+						role: "tool",
+						tool_call_id: toolResponse.toolCallId,
+						content: contentValue,
+						...toolResponseMetadata,
+					});
+				}
+				break;
+			}
 
-      default: {
-        const _exhaustiveCheck: never = role
-        throw new Error(`Unsupported role: ${_exhaustiveCheck}`)
-      }
-    }
-  }
+			default: {
+				const _exhaustiveCheck: never = role;
+				throw new Error(`Unsupported role: ${_exhaustiveCheck}`);
+			}
+		}
+	}
 
-  return messages
+	return messages;
 }
